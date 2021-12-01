@@ -332,6 +332,9 @@ void HidKbd_Init( uint8 task_id )
 
 	uint8	OTA_Passward_AscII[8]	=	{'L','E','N','Z','E','Z','P','Q'};
 	ota_app_AddService_UseKey(8,OTA_Passward_AscII);
+
+
+	LC_Key_Gpio_Init();
 	 
 	// Setup a delayed profile startup
 	osal_set_event( hidKbdTaskId, START_DEVICE_EVT );

@@ -357,49 +357,45 @@ void LC_Switch_Poweron(uint8 cur_state, uint8 power_start_tick)
 	{
 		while(poweron_start_num)
 		{
-			// if(clock_time_exceed_func(poweron_start_time_100ms, 10))
-			// {
-				// poweron_start_time_100ms	=	hal_systick() | 1;
-				if(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)
+			if(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)
+			{
+				WaitMs(10);
+				poweron_start_num--;
+				// LOG("press first %d\n", poweron_start_num);
+				if(poweron_start_num == 0)
 				{
-					WaitMs(10);
-					poweron_start_num--;
-					if(poweron_start_num == 0)
-					{
-						LOG("long once press\n");
-						LC_Dev_System_Param.dev_power_flag	=	SYSTEM_STANDBY;
-						LC_Dev_Poweroff();
-						return;
-					}
+					// LOG("long once press\n");
+					LC_Dev_System_Param.dev_power_flag	=	SYSTEM_STANDBY;
+					LC_Dev_Poweroff();
+					return;
 				}
-				else
+			}
+			else
+			{
+				// LOG("release first\n");
+				if(poweron_start_num != power_start_tick)
 				{
-					if(poweron_start_num != power_start_tick)
+					poweron_start_num	=	20;
+					while(poweron_start_num)
 					{
-						poweron_start_num	=	20;
-						while(poweron_start_num)
+						WaitMs(10);
+						// LOG("check second press\n");
+						poweron_start_num--;
+						if(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)
 						{
+							// LOG("press second %d\n",poweron_start_num);
+							poweron_start_num	=	0;
 							WaitMs(10);
-							// if(clock_time_exceed_func(poweron_start_time_100ms, 10))
-							// {
-							// 	poweron_start_time_100ms	=	hal_systick();
-								poweron_start_num--;
-								if(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)
-								{
-									poweron_start_num	=	0;
-									WaitMs(10);
-									while(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)	;
-									LC_Dev_System_Param.dev_power_flag		=	SYSTEM_WORKING;
-									return;
-								}
-							// }
+							while(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)	;
+							LC_Dev_System_Param.dev_power_flag		=	SYSTEM_WORKING;
+							return;
 						}
 					}
-					poweron_start_num	=	power_start_tick;
-					LC_Dev_System_Param.dev_power_flag		=	SYSTEM_STANDBY;
-					LC_Dev_Poweroff();
 				}
-			// }
+				poweron_start_num	=	power_start_tick;
+				LC_Dev_System_Param.dev_power_flag		=	SYSTEM_STANDBY;
+				LC_Dev_Poweroff();
+			}
 		}
 	}
 	#else
@@ -492,7 +488,6 @@ void LC_UI_Led_Buzzer_Task_Init(uint8 task_id)
 {
 	LC_Ui_Led_Buzzer_TaskID	=	task_id;
 	LC_UI_Led_Buzzer_Gpio_Init();
-	LC_Key_Gpio_Init();
 }
 /*!
  *	@fn			LC_UI_Led_Buzzer_ProcessEvent
