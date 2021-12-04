@@ -146,7 +146,7 @@ static	uint8	scanData[RESPDATA_MAX_LENGTH] =
 	0x0a,0x01,						//	selfie production
 	0xff,0xff,0xff,0xff,0xff,0xff,
 	0x66,
-	0x1E,0x01,0x02,0x01,
+	0x1E,0x01,0x03,0x00,
     0x00,
 };
 
@@ -337,7 +337,10 @@ void HidKbd_Init( uint8 task_id )
 	LC_Key_Gpio_Init();
 	 
 	// Setup a delayed profile startup
-	osal_set_event( hidKbdTaskId, START_DEVICE_EVT );
+	if(LC_Dev_System_Param.dev_charging_flag == 0)
+	{
+		osal_set_event( hidKbdTaskId, START_DEVICE_EVT );
+	}
 }
 
 /*********************************************************************

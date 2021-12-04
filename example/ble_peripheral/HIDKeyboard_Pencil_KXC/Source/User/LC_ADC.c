@@ -31,7 +31,7 @@ adc_Cfg_t	LC_ADC_CFG	=	{
 	.channel	=	ADC_BIT(ADC_CH3P_P20),
 	.is_continue_mode 	=	FALSE,
 	.is_differential_mode	=	0,
-	.is_high_resolution	=	0x7f,//
+	.is_high_resolution	=	0xff,//
 };
 
 uint8	LC_ADC_GP23_Measure(void)
@@ -88,10 +88,10 @@ void LC_ADC_Handler_Evt(adc_Evt_t* pev)
 			is_high_resolution		=	(LC_ADC_CFG.is_high_resolution & ADC_BIT(ADC_CH3P_P20))?TRUE:FALSE;
 			is_differential_mode	=	(LC_ADC_CFG.is_differential_mode & ADC_BIT(ADC_CH3P_P20))?TRUE:FALSE;
 			adc_result	=	hal_adc_value_cal((adc_CH_t)(ADC_CH3P_P20),pev->data,pev->size, is_high_resolution,is_differential_mode);
-			LC_ADC_Param.adc_simp_value	=	(int)(adc_result*1425);
-			if(LC_ADC_Param.adc_simp_value	> 3600)
+			LC_ADC_Param.adc_simp_value	=	(int)(adc_result*7200);
+			if(LC_ADC_Param.adc_simp_value	> 3300)
 			{
-				battLevel	=	(uint8)((LC_ADC_Param.adc_simp_value - 3600)/6);
+				battLevel	=	(uint8)((LC_ADC_Param.adc_simp_value - 3300)/9);
 				LOG("battery voltage :%d mV, percent=%d\n",LC_ADC_Param.adc_simp_value,battLevel);
 			}
 			else
@@ -123,6 +123,7 @@ void LC_ADC_Task_Init(uint8 task_id)
 	LC_ADC_TaskID	=	task_id;
 	if(LC_Dev_System_Param.dev_power_flag == SYSTEM_WORKING){
 		osal_start_timerEx(LC_ADC_TaskID, ADC_EVENT_LEVEL1, 3*1000);
+		hal_gpio_cfg_analog_io(P20, Bit_ENABLE);
 		LOG("ADC Init ~~\n");
 	}
 }
@@ -150,7 +151,10 @@ uint16	LC_ADC_ProcessEvent(uint8 task_id, uint16 events)
 		return(events ^ SYS_EVENT_MSG);
 	}
 	if(events & ADC_EVENT_LEVEL1){
-		osal_start_timerEx(LC_ADC_TaskID, ADC_EVENT_LEVEL3, 10);	//EN 10ms
+		hal_adc_stop();
+		hal_adc_init();
+		LC_ADC_Channel_Init();
+		hal_adc_start();
 		osal_start_reload_timer(LC_ADC_TaskID, ADC_EVENT_LEVEL1, 10*1000);//	interval 10s
 		return(events ^ ADC_EVENT_LEVEL1);
 	}

@@ -52,6 +52,8 @@ lc_ui_run_para	Led_No1_Param	=	{Led_No1_Mode_Ms};
 lc_ui_run_para	Led_No2_Param	=	{Led_No2_Mode_Ms};
 lc_ui_run_para	Led_No3_Param	=	{Led_No3_Mode_Ms};
 lc_ui_run_para	Buzzer_Param	=	{Buzzer_Mode_Ms};
+uint8	Breath_Duty				=	255;
+uint8	Breath_Increase_Flag	=	0;
 /*------------------------------------------------------------------*/
 /* 					 	local functions			 					*/
 /*------------------------------------------------------------------*/
@@ -78,15 +80,64 @@ static	void	LC_PWMChannelInit(void)
 
 	hal_pwm_init(PWM_CH1, PWM_CLK_NO_DIV, PWM_CNT_UP, PWM_POLARITY_FALLING);
 	hal_pwm_open_channel(PWM_CH1, GPIO_PWM_P34);
+
+	hal_pwm_init(PWM_CH2, PWM_CLK_NO_DIV, PWM_CNT_UP, PWM_POLARITY_FALLING);
+	hal_pwm_open_channel(PWM_CH2, MY_GPIO_LED_NO2);
 }
 /**
  * @brief 	Set RGB value to PWM register.
  * 
  */
-void	LC_PWMSetRGBValue(void)
+static	void	LC_PWMSetRGBValue(void)
 {
 	hal_pwm_set_count_val(PWM_CH0, PWM_G_TEST, PWM_MAX_G);
 	hal_pwm_set_count_val(PWM_CH1, PWM_R_TEST, PWM_MAX_R);
+	hal_pwm_set_count_val(PWM_CH2, PWM_BREATH_MAX, PWM_BREATH_MAX);
+}
+static	void	LC_LedPWMChannelInit(void)
+{
+	Breath_Increase_Flag		=	0;
+	Breath_Duty					=	PWM_BREATH_MAX;
+
+	hal_gpio_pin_init(MY_GPIO_LED_NO2, OEN);
+	hal_gpio_write(MY_GPIO_LED_NO2, 1);
+	hal_pwm_init(PWM_CH2, PWM_CLK_NO_DIV, PWM_CNT_UP, PWM_POLARITY_FALLING);
+	hal_pwm_open_channel(PWM_CH2, MY_GPIO_LED_NO2);
+	hal_pwm_set_count_val(PWM_CH2, PWM_BREATH_MAX, PWM_BREATH_MAX);
+	hal_pwm_start();
+}
+static	void	Led_ChargeBreath(void)
+{
+	{
+		if(Breath_Increase_Flag == 0)
+		{
+			Breath_Duty--;
+			if(Breath_Duty == 0)
+			{
+				Breath_Increase_Flag	=	1;
+			}
+		}
+		else
+		{
+			Breath_Duty++;
+			if(Breath_Duty == PWM_BREATH_MAX)
+			{
+				Breath_Increase_Flag	=	0;
+			}
+		}
+		LOG("breath %d\n",Breath_Duty);
+		hal_pwm_set_count_val(PWM_CH2, Breath_Duty, PWM_BREATH_MAX);
+	}
+}
+static	void	LC_Working_Timer(void)
+{
+	LC_Dev_System_Param.dev_timeout_poweroff_cnt--;
+	LOG("system tiemr WORKING = [%d]*[%d]s\n",LC_Dev_System_Param.dev_timeout_poweroff_cnt,LC_TIMER_INTERVAL);
+	if(LC_Dev_System_Param.dev_timeout_poweroff_cnt == 0)
+	{
+		osal_stop_timerEx(LC_Ui_Led_Buzzer_TaskID, UI_EVENT_LEVEL1);
+		LC_Dev_Poweroff();
+	}
 }
 
 void	LC_PWM_OUT_Switch(uint8 onoff)
@@ -99,9 +150,12 @@ void	LC_PWM_OUT_Switch(uint8 onoff)
 		hal_pwm_start();
 	}
 	else
-	{
+	{		
+		// hal_pwm_module_deinit();
+		hal_pwm_close_channel(PWM_CH0);
+		hal_pwm_close_channel(PWM_CH1);
 		LC_PWM_Pin_Init();
-		hal_pwm_stop();
+		// hal_pwm_stop();
 	}
 }
 /*!
@@ -110,230 +164,13 @@ void	LC_PWM_OUT_Switch(uint8 onoff)
  *	@param[in]	none.
  *	@return		none.
  */
-void LC_UI_Led_Buzzer_Gpio_Init(void)
+void	LC_UI_Led_Buzzer_Gpio_Init(void)
 {
 	hal_gpio_pin_init(MY_GPIO_LED_NO1, OEN);
-	hal_gpioretention_register(MY_GPIO_LED_NO1);
 	LC_LED_BLUE_OFF();
 
 	hal_gpio_pin_init(MY_GPIO_LED_NO2, OEN);
-	hal_gpioretention_register(MY_GPIO_LED_NO2);
 	LC_LED_GREEN_OFF();
-}
-
-/*!
- *	@fn			LC_Pwm_Contorl
- *	@brief		Control the duty and frequence of PWM
- *	@param[in]	pwm_ch		:channel of PWM
- *	@param[in]	duty_value	:frequence of pwm
- *	@return		success or err.
- */
-uint8	LC_Pwm_Contorl(uint8 pwm_ch, uint16 duty_value)
-{
-
-	if( (pwm_ch > 3) || (duty_value > BUZZER_FREQ)){
-		return PPlus_ERR_INVALID_PARAM;
-	}
-	switch(pwm_ch){
-		case	0:
-			if(duty_value == 0){
-				hal_gpio_write(MY_GPIO_PWM_NO1, 0);
-				
-//				hal_gpio_fmux(MY_GPIO_PWM_NO1, Bit_DISABLE);
-//				hal_gpio_pin_init(MY_GPIO_PWM_NO1, IE);
-//				hal_gpio_pull_set(MY_GPIO_PWM_NO1, PULL_DOWN);
-			}else{
-				hal_pwm_init(PWM_CH0, PWM_CLK_DIV_8, PWM_CNT_UP, PWM_POLARITY_FALLING);
-				hal_pwm_open_channel(PWM_CH0, MY_GPIO_PWM_NO1);
-				hal_pwm_start();
-
-				hal_pwm_set_count_val(PWM_CH0, BUZZER_DUTY, BUZZER_FREQ);
-			}
-		break;
-
-		default:
-		break;
-	}
-	return	PPlus_SUCCESS;
-}
-
-uint8	LC_Pwm_On(uint8 pwm_ch)
-{
-	switch(pwm_ch){
-		case	0:
-			hal_pwm_init(PWM_CH0, PWM_CLK_DIV_8, PWM_CNT_UP, PWM_POLARITY_FALLING);
-			hal_pwm_set_count_val(PWM_CH0, BUZZER_DUTY, BUZZER_FREQ);
-			hal_pwm_open_channel(PWM_CH0, MY_GPIO_PWM_NO1);
-		break;
-		default:
-		break;
-	}
-	hal_pwm_start();
-	return PPlus_SUCCESS;
-}
-uint8	LC_Pwm_Off(uint8 pwm_ch)
-{
-	switch(pwm_ch){
-		case 0:
-			hal_pwm_close_channel(PWM_CH0);
-			hal_pwm_destroy(PWM_CH0);
-		break;
-
-		default:
-		break;
-	}
-	hal_pwm_stop();
-	return PPlus_SUCCESS;
-}
-/*!
- *	@fn			LC_Led_No1_Onoff
- *	@brief		led and buzzer on-off state control.
- *	@param[in]	Onoff		:the state of led or buzzer
- *	@return		none.
- */
-void LC_Led_No1_Onoff(uint8 Onoff)
-{
-	if(Onoff){
-		hal_gpio_write(MY_GPIO_LED_NO1, 1);
-	}else{
-		hal_gpio_write(MY_GPIO_LED_NO1, 0);
-	}
-}
-void LC_Led_No2_Onoff(uint8 Onoff)
-{
-	if(Onoff){
-		hal_gpio_write(MY_GPIO_LED_NO2, 1);
-	}else{
-		hal_gpio_write(MY_GPIO_LED_NO2, 0);
-	}
-}
-void LC_Led_No3_Onoff(uint8 Onoff)
-{
-	if(Onoff){
-		hal_gpio_write(MY_GPIO_LED_NO3, 1);
-	}else{
-		hal_gpio_write(MY_GPIO_LED_NO3, 0);
-	}
-}
-void LC_Buzzer_Onoff(uint8 Onoff)
-{
-	if(Onoff){
-		LC_Pwm_On(0);
-		LC_Pwm_Contorl(0, BUZZER_DUTY);
-	}else{
-		LC_Pwm_Off(0);
-		hal_gpio_fmux(MY_GPIO_PWM_NO1, Bit_DISABLE);
-		hal_gpio_pin_init(MY_GPIO_PWM_NO1, IE);
-		hal_gpio_pull_set(MY_GPIO_PWM_NO1, PULL_DOWN);
-	}
-}
-/*!
- *	@fn			LC_UI_Cacl
- *	@brief		Caculate the ui wakeup time.
- *	@param[in]	ui_bl		:current running parameter of led or buzzer.
- *	@return		running time of led.
- */
-uint32 LC_UI_Cacl(lc_ui_run_para *ui_bl)
-{
-	if(ui_bl->cur_mode == 0) return 0;
-
-	if(ui_bl->next_wakeup_tick - ((hal_systick()|1) + 2) < BIT(30)){
-		return ui_bl->next_wakeup_tick;
-	}
-	if(ui_bl->cur_state && ui_bl->cur_cnt && ui_bl->cur_cnt != 0xff){//!=0 !=0xff ==on
-		ui_bl->cur_cnt --;
-	}
-	if(ui_bl->cur_cnt == 0 ){
-		ui_bl->cur_mode = ui_bl->ui_type[ui_bl->cur_mode].next_mode;
-		ui_bl->cur_cnt = ui_bl->ui_type[ui_bl->cur_mode].offOn_cnt;
-	}
-	if(ui_bl->cur_cnt && ui_bl->ui_type[ui_bl->cur_mode].offOn_Ms[0] == 0){
-		ui_bl->cur_state = 1;
-	}else {
-		ui_bl->cur_state = ui_bl->cur_state ? 0: 1;
-	}
-	//ui_bl->cur_state = ui_bl->cur_state ? 0: 1;
-	ui_bl->next_wakeup_tick = hal_systick() + ui_bl->ui_type[ui_bl->cur_mode].offOn_Ms[ui_bl->cur_state] ;
-	return ui_bl->next_wakeup_tick;
-}
-/*!
- *	@fn				LC_UI_Tick_Process
- *	@brief			deal the mode of led or buzzer,and manage power.
- *	@param[in]		none.
- *	@retrurn		none.
- */
-uint32 LC_UI_Tick_Process(void)
-{
-	static	uint32	next_led_wakeup_timerout	=	0;
-	uint32	next_led_wakeup_tick_1	=	LC_UI_Cacl(&Led_No1_Param);
-	uint32	next_led_wakeup_tick_2	=	LC_UI_Cacl(&Led_No2_Param);
-//	uint32	next_led_wakeup_tick_3	=	LC_UI_Cacl(&Led_No3_Param);
-//	uint32	next_buzzer_wakeup_tick	=	LC_UI_Cacl(&Buzzer_Param);
-
-	if(Led_No1_Param.cur_mode || Led_No2_Param.cur_mode)
-	{
-		if(Led_No1_Param.cur_state || Led_No2_Param.cur_state){
-			LC_Dev_System_Param.dev_lowpower_flag	=	1;
-			next_led_wakeup_timerout	=	hal_systick()|1;
-		}else{
-			LC_Dev_System_Param.dev_lowpower_flag	=	0;
-		}
-	}else{
-		if(next_led_wakeup_timerout && clock_time_exceed_func(next_led_wakeup_timerout, 100)){
-			LC_Dev_System_Param.dev_lowpower_flag	=	0;
-			next_led_wakeup_timerout	=	0;
-		}
-	}
-
-
-	if(LC_Dev_System_Param.dev_lowpower_flag	!=	2){
-		hal_pwrmgr_unlock(MOD_USR8);	//	low power mode
-	}else{
-		hal_pwrmgr_lock(MOD_USR8);
-	}
-
-	LC_Led_No1_Onoff(Led_No1_Param.cur_state);
-	LC_Led_No2_Onoff(Led_No2_Param.cur_state);
-//	LC_Led_No3_Onoff(Led_No3_Param.cur_state);
-//	LC_Buzzer_Onoff(Buzzer_Param.cur_state);
-
-	return	next_led_wakeup_tick_1;
-}
-/*!
- *	@fn			LC_UI_Enter_Mode
- *	@brief		change led or buzzer mode.
- *	@param[in]	ui_param	:all mode parameters of led or buzzer.
- *	@param[in]	mode		:wanted mode.
- *	@return		none.
- */
-void LC_UI_Enter_Mode(lc_ui_run_para *ui_param, uint8 mode)
-{
-	ui_param->cur_cnt = ui_param->ui_type[mode].offOn_cnt;
-	ui_param->cur_mode = mode;
-	ui_param->cur_state = 0;
-	ui_param->next_wakeup_tick = hal_systick()|1;
-}
-void LC_Led_No1_Enter_Mode(uint8 mode, uint8	time)
-{
-	LC_UI_Enter_Mode(&Led_No1_Param, mode);
-	if(LC_Dev_System_Param.dev_power_flag&&time){
-		osal_set_event(LC_Ui_Led_Buzzer_TaskID, UI_EVENT_LEVEL1);
-	}
-}
-void LC_Led_No2_Enter_Mode(uint8 mode, uint8	time)
-{
-	LC_UI_Enter_Mode(&Led_No2_Param, mode);
-	if(LC_Dev_System_Param.dev_power_flag && time){
-		osal_set_event(LC_Ui_Led_Buzzer_TaskID, UI_EVENT_LEVEL1);
-	}
-}
-void LC_Led_No3_Enter_Mode(uint8 mode)
-{
-	LC_UI_Enter_Mode(&Led_No3_Param, mode);
-}
-void LC_Buzzer_Enter_Mode(uint8 mode)
-{
-	LC_UI_Enter_Mode(&Buzzer_Param, mode);
 }
 /*!
  *	@fn			LC_Switch_Poweron
@@ -361,10 +198,10 @@ void LC_Switch_Poweron(uint8 cur_state, uint8 power_start_tick)
 			{
 				WaitMs(10);
 				poweron_start_num--;
-				// LOG("press first %d\n", poweron_start_num);
+				LOG("press first %d\n", poweron_start_num);
 				if(poweron_start_num == 0)
 				{
-					// LOG("long once press\n");
+					LOG("long once press\n");
 					LC_Dev_System_Param.dev_power_flag	=	SYSTEM_STANDBY;
 					LC_Dev_Poweroff();
 					return;
@@ -372,18 +209,18 @@ void LC_Switch_Poweron(uint8 cur_state, uint8 power_start_tick)
 			}
 			else
 			{
-				// LOG("release first\n");
+				LOG("release first\n");
 				if(poweron_start_num != power_start_tick)
 				{
-					poweron_start_num	=	20;
+					poweron_start_num	=	10;
 					while(poweron_start_num)
 					{
-						WaitMs(10);
-						// LOG("check second press\n");
+						WaitMs(50);
+						LOG("check second press\n");
 						poweron_start_num--;
 						if(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)
 						{
-							// LOG("press second %d\n",poweron_start_num);
+							LOG("press second %d\n",poweron_start_num);
 							poweron_start_num	=	0;
 							WaitMs(10);
 							while(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)	;
@@ -427,22 +264,6 @@ void LC_Switch_Poweron(uint8 cur_state, uint8 power_start_tick)
 	#endif
 }
 /*!
- *	@fn			LC_Dev_Suspend
- *	@brief		the process of suspend,disable adv.
- *	@param[in]	none.
- *	@return		none.
- */
-void	LC_Dev_Suspend(void)
-{
-	LOG("system disable advertisementing\n");
-	hal_gpio_write(MY_GPIO_LED_NO1, 1);
-	hal_gpio_write(MY_GPIO_LED_NO2, 1);
-	hal_pwrmgr_unlock(MOD_USR8);
-    LC_Dev_System_Param.dev_power_flag	=	SYSTEM_SUSPEND;
-	uint8 initial_advertising_enable    =   FALSE;
-	GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &initial_advertising_enable );
-}
-/*!
  *	@fn			LC_Dev_Poweroff
  *	@brief		the process of power off,need to disable adv and all events.
  *	@param[in]	none.
@@ -452,11 +273,17 @@ void LC_Dev_Poweroff(void)
 {
 	LOG("POWER OFF[%d]\n", LC_Dev_System_Param.dev_power_flag);
 
+	hal_gpio_pin_init(GPIO_OUT_DCDC_EN, IE);
+	hal_gpio_pull_set(GPIO_OUT_DCDC_EN, GPIO_PULL_UP_S);
+
 	pwroff_cfg_t	User_Set_Wakeup[2];
 	User_Set_Wakeup[0].pin	=	MY_KEY_NO1_GPIO;
 	User_Set_Wakeup[0].type	=	NEGEDGE;
 	User_Set_Wakeup[0].on_time	=	5;
 
+	User_Set_Wakeup[1].pin	=	GPIO_USB_CHECK;
+	User_Set_Wakeup[1].type	=	POSEDGE;
+	User_Set_Wakeup[1].on_time	=	5;
 	hal_pwrmgr_unlock(MOD_USR8);
 
 	AP_WDT->CRR	=	0x76;	//	feed watch dog
@@ -464,17 +291,7 @@ void LC_Dev_Poweroff(void)
 		WaitUs(10*1000);
 		AP_WDT->CRR	=	0x76;	//	feed watch dog
 	}
-	hal_pwrmgr_poweroff(&User_Set_Wakeup[0], 1);
-}
-
-static	void	LC_Working_Timer(void)
-{
-	LC_Dev_System_Param.dev_timeout_poweroff_cnt--;
-	LOG("system tiemr WORKING = [%d]*[%d]s\n",LC_Dev_System_Param.dev_timeout_poweroff_cnt,LC_TIMER_INTERVAL);
-	if(LC_Dev_System_Param.dev_timeout_poweroff_cnt == 0){
-		osal_stop_timerEx(LC_Ui_Led_Buzzer_TaskID, UI_EVENT_LEVEL1);
-		LC_Dev_Poweroff();
-	}
+	hal_pwrmgr_poweroff(&User_Set_Wakeup[0], 2);
 }
 
 /*!
@@ -550,10 +367,31 @@ uint16	LC_UI_Led_Buzzer_ProcessEvent(uint8 task_id, uint16 events)
 		return(events ^ UI_EVENT_LEVEL1);
 	}
 
+
 	if(events & DEV_ENABLE_PWMOUT)
 	{
-
+		Led_ChargeBreath();
 		return(events ^ DEV_ENABLE_PWMOUT);
+	}
+
+	if(events & CHARGE_BREATH_INIT)
+	{
+		LC_Timer_Start();
+		LC_LedPWMChannelInit();
+		if(LC_Dev_System_Param.dev_ble_con_state == LC_DEV_BLE_DISCONNECTION)
+		{
+			osal_stop_timerEx(LC_Ui_Led_Buzzer_TaskID, UI_EVENT_LEVEL1);
+			uint8 initial_advertising_enable	=	FALSE;
+			GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED,	sizeof( uint8  ),	&initial_advertising_enable	);
+		}
+		else
+		{
+			LOG("charging disable PWM output\n");
+			DCDC_DISABLE();
+			LC_PWM_OUT_Switch(State_Off);
+		}
+		LC_LED_BLUE_OFF();
+		return(events ^ CHARGE_BREATH_INIT);
 	}
 
     // Discard unknown events

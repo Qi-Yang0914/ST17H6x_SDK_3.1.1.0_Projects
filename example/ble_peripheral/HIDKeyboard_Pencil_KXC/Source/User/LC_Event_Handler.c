@@ -36,11 +36,10 @@
  */
 void	__ATTR_SECTION_SRAM__  __attribute__((used))	LC_RGB_Valeu_Deal(uint8 evt)
 {
-	// if(evt == HAL_EVT_TIMER_5)
+	if(evt == HAL_EVT_TIMER_5)
 	{
-		LOG("\ntimer5 \n");
+		osal_set_event(LC_Ui_Led_Buzzer_TaskID, DEV_ENABLE_PWMOUT);
 	}
-	LOG("evt = %d\n",evt);
 }
 /**
  *	@fn			LC_IR_Analysis_Data
@@ -95,10 +94,10 @@ void	__ATTR_SECTION_SRAM__  __attribute__((used))	LC_Key_Pin_IntHandler(GPIO_Pin
 			if(type == POSEDGE)
 			{
 				LOG("Start Charging\n");
-				LC_LED_GREEN_ON();
 				hal_gpioin_register(GPIO_USB_CHECK, NULL, NULL);
 				LC_Dev_System_Param.dev_charging_flag	=	1;
 				battPowerState	=	0xBB;
+				osal_start_timerEx(LC_Ui_Led_Buzzer_TaskID, CHARGE_BREATH_INIT, 1000);
 				osal_start_timerEx(LC_Key_TaskID, KEY_CHARG_CHECK_EVT, 1000);
 			}
 			break;
