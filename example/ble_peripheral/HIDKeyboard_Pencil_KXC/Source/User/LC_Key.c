@@ -274,6 +274,7 @@ uint16 LC_Key_ProcessEvent(uint8 task_id, uint16 events)
 		if(hal_gpio_read(GPIO_CHGR_CHECK) == 1)
 		{
 			LOG("charge finish\n");
+			LC_Timer_Stop();
 			hal_pwm_stop();
 			hal_gpio_pin_init(MY_GPIO_LED_NO2, OEN);
 			LC_LED_GREEN_ON();

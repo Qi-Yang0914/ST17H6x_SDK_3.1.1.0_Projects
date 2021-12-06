@@ -276,6 +276,11 @@ void LC_Dev_Poweroff(void)
 	hal_gpio_pin_init(GPIO_OUT_DCDC_EN, IE);
 	hal_gpio_pull_set(GPIO_OUT_DCDC_EN, GPIO_PULL_UP_S);
 
+	hal_gpio_pin_init(MY_GPIO_LED_NO1, IE);
+	hal_gpio_pin_init(MY_GPIO_LED_NO2, IE);
+	hal_gpio_pull_set(MY_GPIO_LED_NO1, GPIO_PULL_UP_S);
+	hal_gpio_pull_set(MY_GPIO_LED_NO2, GPIO_PULL_UP_S);
+
 	pwroff_cfg_t	User_Set_Wakeup[2];
 	User_Set_Wakeup[0].pin	=	MY_KEY_NO1_GPIO;
 	User_Set_Wakeup[0].type	=	NEGEDGE;
