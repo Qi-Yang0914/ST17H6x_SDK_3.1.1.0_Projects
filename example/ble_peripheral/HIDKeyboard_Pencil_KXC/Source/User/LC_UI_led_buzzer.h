@@ -28,7 +28,7 @@ extern	"C"	{
 /*						Pins definitions							*/
 /*------------------------------------------------------------------*/
 #define		MY_GPIO_LED_NO1		P1				//	blue LED
-#define		MY_GPIO_LED_NO2		P24				//	green LED
+#define		MY_GPIO_LED_NO2		P31				//	green LED
 #define		MY_GPIO_LED_NO3		GPIO_DUMMY
 #define		MY_GPIO_PWM_NO1		GPIO_DUMMY
 #define		MY_GPIO_PWM_NO2		GPIO_DUMMY
