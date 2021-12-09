@@ -125,18 +125,22 @@ static	void	Led_ChargeBreath(void)
 				Breath_Increase_Flag	=	0;
 			}
 		}
-		LOG("breath %d\n",Breath_Duty);
+		// LOG("breath %d\n",Breath_Duty);
 		hal_pwm_set_count_val(PWM_CH2, Breath_Duty, PWM_BREATH_MAX);
 	}
 }
 static	void	LC_Working_Timer(void)
 {
-	LC_Dev_System_Param.dev_timeout_poweroff_cnt--;
-	LOG("system tiemr WORKING = [%d]*[%d]s\n",LC_Dev_System_Param.dev_timeout_poweroff_cnt,LC_TIMER_INTERVAL);
-	if(LC_Dev_System_Param.dev_timeout_poweroff_cnt == 0)
+	if(LC_Dev_System_Param.dev_timer_poweroff_flag == State_On)
 	{
-		osal_stop_timerEx(LC_Ui_Led_Buzzer_TaskID, UI_EVENT_LEVEL1);
-		LC_Dev_Poweroff();
+		LC_Dev_System_Param.dev_timeout_poweroff_cnt--;
+		LOG("system tiemr WORKING = [%d]*[%d]s\n",LC_Dev_System_Param.dev_timeout_poweroff_cnt,LC_TIMER_INTERVAL);
+		if(LC_Dev_System_Param.dev_timeout_poweroff_cnt == 0)
+		{
+			// osal_stop_timerEx(LC_Ui_Led_Buzzer_TaskID, UI_EVENT_LEVEL1);
+			// LC_Dev_Poweroff();
+			LC_Dev_System_Param.dev_power_flag	=	SYSTEM_STANDBY;
+		}
 	}
 }
 
@@ -342,24 +346,24 @@ uint16	LC_UI_Led_Buzzer_ProcessEvent(uint8 task_id, uint16 events)
 		{
 			if(LC_Dev_System_Param.dev_ble_con_state == LC_DEV_BLE_DISCONNECTION)
 			{
-				//	disconnection led action
-				if(disconnection_led_flag == 0)
+				if(LC_Dev_System_Param.dev_charging_flag == 0)
 				{
-					LC_LED_BLUE_ON();
-					disconnection_led_flag	=	1;
-				}
-				else
-				{
-					LC_LED_BLUE_OFF();
-					disconnection_led_flag	=	0;
+					//	disconnection led action
+					if(disconnection_led_flag == 0)
+					{
+						LC_LED_BLUE_ON();
+						disconnection_led_flag	=	1;
+					}
+					else
+					{
+						LC_LED_BLUE_OFF();
+						disconnection_led_flag	=	0;
+					}
 				}
 			}
 			else 
 			{
-				if(LC_Dev_System_Param.dev_batnoty_enable == State_On)
-				{
-					battNotifyLevel();
-				}
+				battNotifyLevel();
 			}
 
 			osal_start_timerEx(LC_Ui_Led_Buzzer_TaskID, UI_EVENT_LEVEL1, 1*1000);
@@ -383,13 +387,7 @@ uint16	LC_UI_Led_Buzzer_ProcessEvent(uint8 task_id, uint16 events)
 	{
 		LC_Timer_Start();
 		LC_LedPWMChannelInit();
-		if(LC_Dev_System_Param.dev_ble_con_state == LC_DEV_BLE_DISCONNECTION)
-		{
-			osal_stop_timerEx(LC_Ui_Led_Buzzer_TaskID, UI_EVENT_LEVEL1);
-			uint8 initial_advertising_enable	=	FALSE;
-			GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED,	sizeof( uint8  ),	&initial_advertising_enable	);
-		}
-		else
+		if(LC_Dev_System_Param.dev_ble_con_state == LC_DEV_BLE_CONNECTION)
 		{
 			LOG("charging disable PWM output\n");
 			DCDC_DISABLE();

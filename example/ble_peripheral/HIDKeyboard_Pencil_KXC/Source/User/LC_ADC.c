@@ -14,6 +14,7 @@
 uint8	LC_ADC_TaskID;
 lc_adc_struct_data	LC_ADC_Param	=	{
 	.adc_simp_value		=	0,
+	.adc_value_reserved	=	3300,
 };
 /*
     channel:
@@ -83,24 +84,55 @@ void LC_ADC_Handler_Evt(adc_Evt_t* pev)
 	bool	is_differential_mode	=	FALSE;
 	float	adc_result	=	0;
 	static	uint8	check_flag		=	0;
+	static	uint8	inital_sample_value	=	0;
 	if(pev->type == HAL_ADC_EVT_DATA){
 		if(pev->ch == ADC_CH3P_P20){
 			is_high_resolution		=	(LC_ADC_CFG.is_high_resolution & ADC_BIT(ADC_CH3P_P20))?TRUE:FALSE;
 			is_differential_mode	=	(LC_ADC_CFG.is_differential_mode & ADC_BIT(ADC_CH3P_P20))?TRUE:FALSE;
 			adc_result	=	hal_adc_value_cal((adc_CH_t)(ADC_CH3P_P20),pev->data,pev->size, is_high_resolution,is_differential_mode);
 			LC_ADC_Param.adc_simp_value	=	(int)(adc_result*7200);
-			if(LC_ADC_Param.adc_simp_value	> 3300)
+			if(inital_sample_value	== 0)
 			{
+				inital_sample_value	=	1;
+				LC_ADC_Param.adc_value_reserved	=	LC_ADC_Param.adc_simp_value;
 				battLevel	=	(uint8)((LC_ADC_Param.adc_simp_value - 3300)/9);
-				LOG("battery voltage :%d mV, percent=%d\n",LC_ADC_Param.adc_simp_value,battLevel);
 			}
 			else
 			{
-				LOG("ADC simple data:%d\n",LC_ADC_Param.adc_simp_value);
+				if(LC_Dev_System_Param.dev_charging_flag == 0)
+				{
+					if(LC_ADC_Param.adc_simp_value <= LC_ADC_Param.adc_value_reserved)
+					{
+						LC_ADC_Param.adc_value_reserved	=	LC_ADC_Param.adc_simp_value;
+						battLevel	=	(uint8)((LC_ADC_Param.adc_simp_value - 3300)/9);
+					}
+				}
+				else
+				{
+					if(LC_ADC_Param.adc_simp_value >= LC_ADC_Param.adc_value_reserved)
+					{
+						LC_ADC_Param.adc_value_reserved	=	LC_ADC_Param.adc_simp_value;
+						if(LC_Dev_System_Param.dev_charge_full == 0)
+						{
+							battLevel	=	(uint8)((LC_ADC_Param.adc_simp_value - 3300)/10);
+						}
+						else
+						{
+							battLevel	=	100;
+						}
+					}
+				}
+				LOG("battery voltage :%d mV, percent=%d\n",LC_ADC_Param.adc_simp_value,battLevel);
 			}
-			// if(LC_Dev_System_Param.dev_ble_con_state == LC_DEV_BLE_CONNECTION)
+
+			// if(LC_ADC_Param.adc_simp_value	> 3300)
 			// {
-			// 	battNotifyLevel();
+			// 	battLevel	=	(uint8)((LC_ADC_Param.adc_simp_value - 3300)/9);
+			// 	LOG("battery voltage :%d mV, percent=%d\n",LC_ADC_Param.adc_simp_value,battLevel);
+			// }
+			// else
+			// {
+			// 	LOG("ADC simple data:%d\n",LC_ADC_Param.adc_simp_value);
 			// }
 			check_flag	=	0x02;
 		}

@@ -375,16 +375,26 @@ uint16 HidDev_ProcessEvent( uint8 task_id, uint16 events )
 			LC_Dev_System_Param.dev_phone_type	=	OLD_PHONE;
 		}
 		HIDkb_EnNotifyCfg();
-		osal_start_timerEx(LC_ADC_TaskID,ADC_EVENT_LEVEL1, 1000);
+		osal_start_timerEx(LC_ADC_TaskID, ADC_EVENT_LEVEL1, 200);
 		// application
 		{
 			LC_Dev_System_Param.dev_timeout_poweroff_cnt	=	LC_DEV_TIMER_CON_PWROFF;
-			LC_Dev_System_Param.dev_ble_con_state	=	LC_DEV_BLE_CONNECTION;
-			LC_Dev_System_Param.dev_batnoty_enable	=	State_On;
-			LC_LED_BLUE_ON();
-			DCDC_ENABLE();
-			LC_PWM_OUT_Switch(State_On);
-		}		
+			LC_Dev_System_Param.dev_ble_con_state			=	LC_DEV_BLE_CONNECTION;
+			if(LC_Dev_System_Param.dev_charging_flag == 0)
+			{
+				LC_Dev_System_Param.dev_timer_poweroff_flag	=	State_On;
+				LC_LED_BLUE_ON();
+				DCDC_ENABLE();
+				LC_PWM_OUT_Switch(State_On);
+			}
+			else
+			{
+				LC_Dev_System_Param.dev_timer_poweroff_flag	=	State_Off;
+				LC_LED_BLUE_OFF();
+				DCDC_DISABLE();
+				LC_PWM_OUT_Switch(State_Off);
+			}
+		}
 		LOG("phone type check %d\n",LC_Dev_System_Param.dev_phone_type);
 		return(events ^ HID_PHONE_CHECK_EVT);
 	}
@@ -1004,25 +1014,23 @@ void hidDevGapStateCB( gaprole_States_t newState )
 		// Setup adverstising filter policy first
 		param = GAP_FILTER_POLICY_ALL;
 		VOID GAPRole_SetParameter( GAPROLE_ADV_FILTER_POLICY, sizeof( uint8 ), &param );
-		// param = TRUE;
-		// VOID GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &param );
+		param = TRUE;
+		VOID GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &param );
 	}
 	//	application management
 	{
 		if(LC_Dev_System_Param.dev_charging_flag == 0)
 		{
-			uint8	param = TRUE;
-			VOID GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &param );
 			LC_Dev_System_Param.dev_timeout_poweroff_cnt	=	LC_DEV_TIMER_DISCON_PWROFF;
+			LC_Dev_System_Param.dev_timer_poweroff_flag		=	State_On;
 			LC_Dev_System_Param.dev_ble_con_state			=	LC_DEV_BLE_DISCONNECTION;
-			LC_Dev_System_Param.dev_batnoty_enable			=	State_Off;
 			DCDC_DISABLE();
 			LC_PWM_OUT_Switch(State_Off);
 		}
 		else
 		{
+			LC_Dev_System_Param.dev_timer_poweroff_flag		=	State_Off;
 			LC_Dev_System_Param.dev_ble_con_state			=	LC_DEV_BLE_DISCONNECTION;
-			osal_stop_timerEx(LC_Ui_Led_Buzzer_TaskID, UI_EVENT_LEVEL1);
 			LC_LED_BLUE_OFF();
 		}
 	}

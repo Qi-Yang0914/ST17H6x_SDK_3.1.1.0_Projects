@@ -45,7 +45,8 @@
 /*						Data structures								*/
 /*------------------------------------------------------------------*/
 typedef		struct{
-	uint32	adc_simp_value;	//	adc value
+	uint32	adc_simp_value;		//	adc value
+	uint32	adc_value_reserved;	//	compare sample value
 }lc_adc_struct_data;
 /*------------------------------------------------------------------*/
 /*						external variables							*/

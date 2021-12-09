@@ -95,7 +95,8 @@ void	__ATTR_SECTION_SRAM__  __attribute__((used))	LC_Key_Pin_IntHandler(GPIO_Pin
 			{
 				LOG("Start Charging\n");
 				hal_gpioin_register(GPIO_USB_CHECK, NULL, NULL);
-				LC_Dev_System_Param.dev_charging_flag	=	1;
+				LC_Dev_System_Param.dev_charging_flag		=	1;
+				LC_Dev_System_Param.dev_timer_poweroff_flag	=	State_Off;
 				battPowerState	=	0xBB;
 				osal_start_timerEx(LC_Ui_Led_Buzzer_TaskID, CHARGE_BREATH_INIT, 1000);
 				osal_start_timerEx(LC_Key_TaskID, KEY_CHARG_CHECK_EVT, 1000);

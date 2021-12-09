@@ -15,14 +15,14 @@
 lc_dev_sys_param	LC_Dev_System_Param	=	
 {
 	.dev_timeout_poweroff_cnt	=	LC_DEV_TIMER_DISCON_PWROFF,
+	.dev_timer_poweroff_flag	=	State_On,
 	.dev_poweron_switch_flag	=	0,
 	.dev_power_flag				=	0,
 	.dev_lowpower_flag			=	0,
 	.dev_ble_con_state			=	0,
-	.dev_batt_value				=	0,
-
+	.dev_phone_type				=	OLD_PHONE,
 	.dev_charging_flag			=	0,
-	.dev_batnoty_enable			=	0,
+	.dev_charge_full			=	0,
 };
 /*!
  *	@fn			clock_time_exceed_func

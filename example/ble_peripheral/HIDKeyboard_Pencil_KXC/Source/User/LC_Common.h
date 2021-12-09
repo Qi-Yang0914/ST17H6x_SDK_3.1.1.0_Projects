@@ -150,15 +150,15 @@ typedef	enum
 typedef struct
 {
 	uint32			dev_timeout_poweroff_cnt;		//	power off time
-	uint8			dev_timer_poweroff_flag;		
+	uint8			dev_timer_poweroff_flag;		//	power off timer enable flag			:1	enable,		0	disable
 	uint8			dev_poweron_switch_flag;		//	power on switch exist or not		:1	no switch,	0	
 	uint8			dev_power_flag;					//	device working flag					:1	working,	0	power off
 	uint8			dev_lowpower_flag;				//	lower power mode flag				:1	
 	uint8			dev_ble_con_state;				//	BLE	connection state				:1	connected,	0	disconnected
-	uint8			dev_batt_value;					//	device battery pecent
 	phone_type_t	dev_phone_type;					//	phone type	
 	uint8			dev_charging_flag;				//	1	charging,	0	no charging
-	uint8			dev_batnoty_enable;				//	1	enable,		0	disable
+	uint8			dev_charge_full;				//	1	charge full,0
+
 }lc_dev_sys_param;
 
 

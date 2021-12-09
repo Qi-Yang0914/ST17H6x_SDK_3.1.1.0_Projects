@@ -96,14 +96,12 @@ void LC_Key_Gpio_Init(void)
 
 	if(hal_gpio_read(GPIO_USB_CHECK) == 1)
 	{
-		LC_Dev_System_Param.dev_poweron_switch_flag	=	1;
-		LC_Dev_System_Param.dev_charging_flag		=	1;
+		LC_Dev_System_Param.dev_poweron_switch_flag		=	1;
+		LC_Dev_System_Param.dev_charging_flag			=	1;
+		LC_Dev_System_Param.dev_timer_poweroff_flag		=	State_Off;
 	}
+
     LC_Switch_Poweron(0, 50);
-
-	// LOG("power on %d\n",LC_Dev_System_Param.dev_power_flag);
-    LC_Dev_System_Param.dev_timeout_poweroff_cnt = LC_DEV_TIMER_DISCON_PWROFF;
-
 }
 /*!
  *	@fn			LC_Key_Task_Init 
@@ -125,7 +123,6 @@ void LC_Key_Task_Init(uint8 task_id)
 	if(hal_gpio_read(GPIO_USB_CHECK) == 1)
 	{
 		LOG("Start Charging Poweron\n");
-		// hal_gpioin_register(GPIO_USB_CHECK, NULL, NULL);
 		battPowerState	=	0xBB;
 		osal_start_timerEx(LC_Ui_Led_Buzzer_TaskID, CHARGE_BREATH_INIT, 200);
 		osal_start_timerEx(LC_Key_TaskID, KEY_CHARG_CHECK_EVT, 1000);
@@ -278,6 +275,8 @@ uint16 LC_Key_ProcessEvent(uint8 task_id, uint16 events)
 			hal_pwm_stop();
 			hal_gpio_pin_init(MY_GPIO_LED_NO2, OEN);
 			LC_LED_GREEN_ON();
+			LC_Dev_System_Param.dev_charge_full	=	1;
+			battLevel	=	100;
 		}
 
 		if(hal_gpio_read(GPIO_USB_CHECK) == 0)
