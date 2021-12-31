@@ -48,7 +48,7 @@
 #include "osal_snv.h"
 #include "flash.h"
 #include "gpio.h"
-
+#include "i2c.h"
 #include "adc.h"
 #include	"LC_Event_Handler.h"
 /*------------------------------------------------------------------*/

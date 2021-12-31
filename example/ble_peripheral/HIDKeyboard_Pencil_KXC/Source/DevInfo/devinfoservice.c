@@ -151,13 +151,13 @@ static const uint8 devInfoSerialNumber[] 	= 	"GQXY2DLKJKM9";
 #if FIRMWARE_REVISION_ENABLE
 // Firmware Revision String characteristic
 static uint8 devInfoFirmwareRevProps 		= 	GATT_PROP_READ;
-static const uint8 devInfoFirmwareRev[] 	= 	"SDK3.1.1.0_v1.4.0";
+static const uint8 devInfoFirmwareRev[] 	= 	"SDK3.1.1.0_v1.4.1";
 #endif
 
 #if	HARDWARE_REVISION_ENABLE
 // Hardware Revision String characteristic
 static uint8 devInfoHardwareRevProps 		= 	GATT_PROP_READ;
-static const uint8 devInfoHardwareRev[] 	= 	"v1.10";
+static const uint8 devInfoHardwareRev[] 	= 	"v2.00";
 #endif
 
 #if	SOFTWARE_REVISION_ENABLE

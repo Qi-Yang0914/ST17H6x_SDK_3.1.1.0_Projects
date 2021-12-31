@@ -23,6 +23,7 @@
 		"lc_key.h": "c",
 		"battservice.h": "c",
 		"gapbondmgr.h": "c",
-		"gatt_uuid.h": "c"
+		"gatt_uuid.h": "c",
+		"watchdog.h": "c"
 	}
 }

@@ -137,8 +137,6 @@ static	void	LC_Working_Timer(void)
 		LOG("system tiemr WORKING = [%d]*[%d]s\n",LC_Dev_System_Param.dev_timeout_poweroff_cnt,LC_TIMER_INTERVAL);
 		if(LC_Dev_System_Param.dev_timeout_poweroff_cnt == 0)
 		{
-			// osal_stop_timerEx(LC_Ui_Led_Buzzer_TaskID, UI_EVENT_LEVEL1);
-			// LC_Dev_Poweroff();
 			LC_Dev_System_Param.dev_power_flag	=	SYSTEM_STANDBY;
 		}
 	}
@@ -193,14 +191,13 @@ void LC_Switch_Poweron(uint8 cur_state, uint8 power_start_tick)
 	}
 	uint8	poweron_start_num	=	power_start_tick;
 	static	uint32	poweron_start_time_100ms;
-	#if 1
 	if(!cur_state)
 	{
 		while(poweron_start_num)
 		{
+			WaitMs(10);
 			if(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)
 			{
-				WaitMs(10);
 				poweron_start_num--;
 				LOG("press first %d\n", poweron_start_num);
 				if(poweron_start_num == 0)
@@ -213,59 +210,40 @@ void LC_Switch_Poweron(uint8 cur_state, uint8 power_start_tick)
 			}
 			else
 			{
-				LOG("release first\n");
-				if(poweron_start_num != power_start_tick)
+				if(poweron_start_num!=power_start_tick)
+				{	
+					poweron_start_num	=	0;
+					LOG("release first\n");
+				}
+			}
+		}
+		WaitMs(10);
+		if(hal_gpio_read(MY_KEY_NO1_GPIO) != 0)
+		{
+			if(poweron_start_num != power_start_tick)
+			{
+				poweron_start_num	=	20;
+				while(poweron_start_num)
 				{
-					poweron_start_num	=	10;
-					while(poweron_start_num)
+					WaitMs(10);
+					poweron_start_num--;
+					LOG("check second press %d\n", poweron_start_num);
+					if(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)
 					{
-						WaitMs(50);
-						LOG("check second press\n");
-						poweron_start_num--;
-						if(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)
-						{
-							LOG("press second %d\n",poweron_start_num);
-							poweron_start_num	=	0;
-							WaitMs(10);
-							while(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)	;
-							LC_Dev_System_Param.dev_power_flag		=	SYSTEM_WORKING;
-							return;
-						}
+						LOG("press second %d\n",poweron_start_num);
+						poweron_start_num	=	0;
+						// WaitMs(10);
+						// while(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)	;
+						LC_Dev_System_Param.dev_power_flag		=	SYSTEM_WORKING;
+						return;
 					}
 				}
-				poweron_start_num	=	power_start_tick;
-				LC_Dev_System_Param.dev_power_flag		=	SYSTEM_STANDBY;
-				LC_Dev_Poweroff();
 			}
+			poweron_start_num	=	power_start_tick;
+			LC_Dev_System_Param.dev_power_flag		=	SYSTEM_STANDBY;
+			LC_Dev_Poweroff();
 		}
 	}
-	#else
-	if(!cur_state){
-		while(poweron_start_num){
-			WaitUs(1000);
-			if(clock_time_exceed_func(poweron_start_time_100ms, 10)){
-				poweron_start_time_100ms	=	hal_systick() | 1;
-				if(hal_gpio_read(MY_KEY_NO1_GPIO) == 0){
-					poweron_start_num--;
-				}else{
-					poweron_start_num	=	power_start_tick;
-					LC_Dev_System_Param.dev_power_flag		=	SYSTEM_STANDBY;
-					LC_Dev_Poweroff();
-					return ;
-				}
-			}
-		}
-		poweron_start_time_100ms	=	hal_systick() | 1;
-		while(hal_gpio_read(MY_KEY_NO1_GPIO) == 0){		//	release key after power on if key didn't release
-			if(clock_time_exceed_func(poweron_start_time_100ms, 500)){
-				poweron_start_time_100ms	=	hal_systick() | 1;
-				LC_Dev_System_Param.dev_power_flag		=	SYSTEM_WORKING;
-				return;
-			}
-		}
-		LC_Dev_System_Param.dev_power_flag		=	SYSTEM_WORKING;
-	}
-	#endif
 }
 /*!
  *	@fn			LC_Dev_Poweroff

@@ -9,11 +9,20 @@
  * 	@defgroup	LC_Key
  *	@brief
  *	@{*/
-
+/*------------------------------------------------------------------*/
+/*						head files include 							*/
+/*------------------------------------------------------------------*/
 #include "LC_Key.h"
 #include "LC_UI_led_buzzer.h"
 #include "LC_Event_Handler.h"
 #include "hidkbd.h"
+/*------------------------------------------------------------------*/
+/* 					 	local variables			 					*/
+/*------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------*/
+/* 					 	public variables		 					*/
+/*------------------------------------------------------------------*/
 uint8 LC_Key_TaskID;
 lc_key_struct_data LC_Key_Param = {
     .key_down_sys_tick = 0,
@@ -21,7 +30,9 @@ lc_key_struct_data LC_Key_Param = {
     .key_repeated_num = 0,
 
 };
-
+/*------------------------------------------------------------------*/
+/* 					 	local functions			 					*/
+/*------------------------------------------------------------------*/
 static void LC_KeyScanf(void)
 {
     uint8 lc_keynewvalue = 0;
@@ -57,7 +68,98 @@ static void LC_KeyScanf(void)
         }
     }
 }
+/*------------------------------------------------------------------*/
+/* 					 	G-Sensor IIC configuration 					*/
+/*------------------------------------------------------------------*/
+static	void*	LC_DevIICInit(void)
+{
+	void*	pi2c;
+	hal_i2c_pin_init(I2C_0, IIC_GPIO_SDA, IIC_GPIO_SCL);
+	pi2c	=	hal_i2c_init(I2C_0, I2C_CLOCK_100K);
+	return	pi2c;
+}
+static	int	LC_DevIICRead(void* pi2c, uint8 reg, uint8* data, uint8 size, uint8 slave_id)
+{
+	return	hal_i2c_read(pi2c, slave_id, reg, data, size);
+}
+static	int	LC_DevIICWrite(void* pi2c, uint8 reg, uint8 val, uint8 slave_id)
+{
+	uint8	data[2];
+	data[0]	=	reg;
+	data[1]	=	val;
+	hal_i2c_addr_update(pi2c, slave_id);
+	{
+		HAL_ENTER_CRITICAL_SECTION();
+		hal_i2c_tx_start(pi2c);
+		hal_i2c_send(pi2c, data, 2);
+		HAL_EXIT_CRITICAL_SECTION();
+	}
+	return	hal_i2c_wait_tx_completed(pi2c);
+}
+static	int	LC_DevIICDeinit(void* pi2c)
+{
+	int	ret;
+	ret	=	hal_i2c_deinit(pi2c);
+	hal_gpio_pin_init(IIC_GPIO_SCL, IE);
+	hal_gpio_pin_init(IIC_GPIO_SDA, IE);
+	return	ret;
+}
+static	void	LC_DevInitSensor(void)
+{
+	void*	pi2c	=	LC_DevIICInit();
+	uint8	data[2]	=	{0, 0};
 
+	int	ret;
+	ret	=	LC_DevIICRead(pi2c, 0x01, data, 1, GSENSOR_ID);
+	LOG("ret = %d , data = %x\n", ret, data[0]);
+ret	=	LC_DevIICWrite(pi2c, SPI_CONFIG, 0x24, GSENSOR_ID);			//	soft reset
+	LOG("soft rset :ret = %d \n", ret);
+
+// ret	=	LC_DevIICWrite(pi2c, INT_SET1, 0x07, GSENSOR_ID);			//	unfiltered data, enable active interrupe for axis X,Y,Z
+// 	LOG("ret = %d \n", ret);
+// ret	=	LC_DevIICWrite(pi2c, INT_MAP1, 0x04, GSENSOR_ID);			//	mapping active interrupt to INT1
+// 	LOG("ret = %d \n", ret);
+// ret	=	LC_DevIICWrite(pi2c, INT_CONFIG, 0x02, GSENSOR_ID);			//	selevt OPEN DRIVER output for INT1,active level low for pin INT1
+// 	LOG("ret = %d \n", ret);
+// ret	=	LC_DevIICWrite(pi2c, INT_LATCH, 0x0E, GSENSOR_ID);			//	INT1 temporary latched 100ms
+// 	LOG("ret = %d \n", ret);
+// ret	=	LC_DevIICWrite(pi2c, RESOLUTION_RANGE, 0x00, GSENSOR_ID);	//	no filter,+/-2g
+// 	LOG("ret = %d \n", ret);
+// ret	=	LC_DevIICWrite(pi2c, ODR_AXIS, 0x07, GSENSOR_ID);			//	enable X,Y,Z axis, ORD:125Hz
+// 	LOG("ret = %d \n", ret);
+// ret	=	LC_DevIICWrite(pi2c, ACTIVE_THS, 0x14, GSENSOR_ID);			//	active interrupr threshold = 20*3.91mg
+// 	LOG("ret = %d \n", ret);
+// ret	=	LC_DevIICWrite(pi2c, ACTIVE_DUR, 0x00, GSENSOR_ID);			//	active duration time = (1+1)ms
+// 	LOG("ret = %d \n", ret);
+// ret	=	LC_DevIICWrite(pi2c, MODE_BW, 0x50, GSENSOR_ID);			//	low power mode, 125HZ
+// 	LOG("ret = %d \n", ret);
+
+
+ret	=	LC_DevIICWrite(pi2c, RESOLUTION_RANGE, 0x00, GSENSOR_ID);	//	no filter,+/-2g
+	LOG("resolution range :ret = %d \n", ret);
+ret	=	LC_DevIICWrite(pi2c, ODR_AXIS, 0x07, GSENSOR_ID);			//	enable X,Y,Z axis, ORD:125Hz
+	LOG("enable axias :ret = %d \n", ret);
+
+ret	=	LC_DevIICWrite(pi2c, INT_CONFIG, 0x02, GSENSOR_ID);			//	select Open drive output for INT1, active low for pin INT1
+	LOG("select output open driver, low :ret = %d \n", ret);
+ret	=	LC_DevIICWrite(pi2c, INT_LATCH, 0x0E, GSENSOR_ID);			//	INT1 temporary latched 100ms
+	LOG("latched 100ms :ret = %d \n", ret);
+ret	=	LC_DevIICWrite(pi2c, TAP_DUR, 0x02, GSENSOR_ID);			//	tap quite duration:30ms,tap shock duration:50ms
+	LOG("ret = %d \n", ret);
+ret	=	LC_DevIICWrite(pi2c, TAP_THS, 0x1E, GSENSOR_ID);			//	tap interrupt threshlod = 30*62.5mg
+	LOG("ret = %d \n", ret);
+ret	=	LC_DevIICWrite(pi2c, INT_MAP1, 0x20, GSENSOR_ID);			//	mapping single tap interrupt to INI1
+	LOG("ret = %d \n", ret);
+ret	=	LC_DevIICWrite(pi2c, INT_SET1, 0x20, GSENSOR_ID);			//	INT source:unfiltered data, single tap interrupt
+	LOG("ret = %d \n", ret);
+ret	=	LC_DevIICWrite(pi2c, MODE_BW, 0x50, GSENSOR_ID);			//	low power mode, 125HZ
+	LOG("ret = %d \n", ret);
+ret	=	LC_DevIICDeinit(pi2c);
+	LOG("IIC deinit ret = %d\n",ret);
+}
+/*------------------------------------------------------------------*/
+/* 					 	public functions		 					*/
+/*------------------------------------------------------------------*/
 void Key_Pin_Config(void)
 {
     hal_gpio_pin_init(MY_KEY_NO1_GPIO, IE);               //set gpio input
@@ -101,7 +203,7 @@ void LC_Key_Gpio_Init(void)
 		LC_Dev_System_Param.dev_timer_poweroff_flag		=	State_Off;
 	}
 
-    LC_Switch_Poweron(0, 50);
+    LC_Switch_Poweron(0, 30);
 }
 /*!
  *	@fn			LC_Key_Task_Init 
@@ -131,6 +233,7 @@ void LC_Key_Task_Init(uint8 task_id)
 	{
 		hal_gpioin_register(GPIO_USB_CHECK, LC_Key_Pin_IntHandler, NULL);
 	}
+	LC_DevInitSensor();
 }
 /*!
  *	@fn			LC_Key_ProcessEvent
@@ -164,7 +267,7 @@ uint16 LC_Key_ProcessEvent(uint8 task_id, uint16 events)
         static	uint32	LC_last_button_release_time = 0;
         static	uint32	LC_key_time_temp	= 0;
 
-		static	uint8	Key_Press_Twice_Enable		=	0;
+		// static	uint8	Key_Press_Twice_Enable		=	0;
 		static	uint8	Key_Value_Reserved			=	0;
         LC_key_time_temp = hal_systick() | 1;
 
@@ -190,33 +293,47 @@ uint16 LC_Key_ProcessEvent(uint8 task_id, uint16 events)
         {
             LOG("Key total Kick num: %d\n", LC_Key_Param.key_repeated_num);
 
-			if((LC_Key_Param.key_repeated_num == 2) && (LC_Dev_System_Param.dev_charging_flag == 0))
+			if(LC_Dev_System_Param.dev_charging_flag == 0)
 			{
-				if(Key_Press_Twice_Enable == 0)
+				if(LC_Key_Param.key_repeated_num == 1)
 				{
-					Key_Press_Twice_Enable	=	1;
-					LOG("twice once\n");
+					if(LC_Dev_System_Param.dev_ble_con_state == LC_DEV_BLE_CONNECTION)
+					{
+						LOG("CTRL/CMD+Z\n");
+						LL_PLUS_DisableSlaveLatency(0);
+						osal_stop_timerEx(hidKbdTaskId, HID_LATENCY_TURNOFF_EVT);
+						hidKbdSendReport(1, HID_KEYBOARD_Z);
+						hidKbdSendReport(1, HID_KEYBOARD_RESERVED);
+						osal_start_timerEx(hidKbdTaskId, HID_LATENCY_TURNOFF_EVT, 500);
+					}
+				}
+				else if(LC_Key_Param.key_repeated_num == 2)
+				{
 					if(Key_Value_Reserved == 1)
 					{
 						LC_Dev_System_Param.dev_power_flag	=	SYSTEM_STANDBY;
 					}
 					else if(Key_Value_Reserved == 2)
 					{
-						if ((LC_Dev_System_Param.dev_ble_con_state == LC_DEV_BLE_CONNECTION))
+						if(LC_Dev_System_Param.dev_ble_con_state == LC_DEV_BLE_CONNECTION)
 						{
+							LOG("keyboard E\n");
+							LL_PLUS_DisableSlaveLatency(0);
+							osal_stop_timerEx(hidKbdTaskId, HID_LATENCY_TURNOFF_EVT);
 							hidKbdSendReport(0, HID_KEYBOARD_E);
 							hidKbdSendReport(0, HID_KEYBOARD_RESERVED);
-						}						
+							osal_start_timerEx(hidKbdTaskId, HID_LATENCY_TURNOFF_EVT, 500);
+						}
 					}
 				}
 			}
 
 
-			if(Key_Press_Twice_Enable == 1)
-			{
-				Key_Press_Twice_Enable	=	0;
-				LOG("Key Twice Release\n");
-			}
+			// if(Key_Press_Twice_Enable == 1)
+			// {
+			// 	Key_Press_Twice_Enable	=	0;
+			// 	LOG("Key Twice Release\n");
+			// }
             LC_Key_Param.key_down_sys_tick = 0;
             LC_Key_Param.key_repeated_num = 0;
             Key_Value_Reserved = 0;

@@ -20,9 +20,10 @@ extern "C"
 /*********************************************************************
  * CONSTANTS
  */
-#define EN_CONSUMER_MODE		1
-#define EN_MOUSE_REPORT			1
+#define EN_CONSUMER_MODE		0
+#define EN_MOUSE_REPORT			0
 
+#if ((EN_CONSUMER_MODE == 1) && (EN_MOUSE_REPORT == 1))
 // Number of HID reports defined in the service
 #define HID_NUM_REPORTS          9
 
@@ -32,6 +33,18 @@ extern "C"
 #define HID_RPT_ID_CC_IN         3
 #define HID_RPT_ID_LED_OUT       0  // LED output report ID
 #define HID_RPT_ID_FEATURE       0  // Feature report ID
+#else
+// Number of HID reports defined in the service
+#define HID_NUM_REPORTS          7
+
+// HID Report IDs for the service
+#define HID_RPT_ID_KEY_IN        2  // Keyboard input report ID
+#define HID_RPT_ID_MOUSE_IN      1  // Mouse input report ID
+#define HID_RPT_ID_LED_OUT       0  // LED output report ID
+#define HID_RPT_ID_FEATURE       0  // Feature report ID
+#endif
+
+
 // Attribute index enumeration-- these indexes match array elements above
 enum
 {

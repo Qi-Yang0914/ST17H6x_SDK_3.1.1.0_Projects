@@ -92,7 +92,7 @@
 // Maximum connection interval (units of 1.25ms) if automatic parameter update request is enabled
 #define DEFAULT_DESIRED_MAX_CONN_INTERVAL		20//10
 // Slave latency to use if automatic parameter update request is enabled
-#define DEFAULT_DESIRED_SLAVE_LATENCY			0
+#define DEFAULT_DESIRED_SLAVE_LATENCY			4
 // Supervision timeout value (units of 10ms) if automatic parameter update request is enabled
 #define DEFAULT_DESIRED_CONN_TIMEOUT			500
 // Whether to enable automatic parameter update request when a connection is formed
@@ -146,7 +146,7 @@ static	uint8	scanData[RESPDATA_MAX_LENGTH] =
 	0x0a,0x01,						//	selfie production
 	0xff,0xff,0xff,0xff,0xff,0xff,
 	0x66,
-	0x1E,0x01,0x04,0x00,
+	0x1E,0x01,0x04,0x01,
     0x00,
 };
 
