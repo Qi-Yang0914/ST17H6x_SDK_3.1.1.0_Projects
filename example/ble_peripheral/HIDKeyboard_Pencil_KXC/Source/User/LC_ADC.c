@@ -125,15 +125,6 @@ void LC_ADC_Handler_Evt(adc_Evt_t* pev)
 				LOG("battery voltage :%d mV, percent=%d\n",LC_ADC_Param.adc_simp_value,battLevel);
 			}
 
-			// if(LC_ADC_Param.adc_simp_value	> 3300)
-			// {
-			// 	battLevel	=	(uint8)((LC_ADC_Param.adc_simp_value - 3300)/9);
-			// 	LOG("battery voltage :%d mV, percent=%d\n",LC_ADC_Param.adc_simp_value,battLevel);
-			// }
-			// else
-			// {
-			// 	LOG("ADC simple data:%d\n",LC_ADC_Param.adc_simp_value);
-			// }
 			check_flag	=	0x02;
 		}
 		if(check_flag == 0x02){

@@ -1,71 +1,60 @@
 /**
-*	@file	LC_Key.h
-*	@date	09/17/2020
-*	@version	1.0.0
-*
-*/
+ *	@file		LC_IIC.h
+ *	@author		YQ
+ *	@data		11/11/2020
+ *	@version	1.0.0
+ */
 
 /*!
- * 	@defgroup	LC_Key
+ *	@defgroup	LC_IIC
  *	@brief
  *	@{*/
 
-#ifndef LC_KEY_H_
-#define LC_KEY_H_
-
+#ifndef		LC_IIC_H_
+#define		LC_IIC_H_
 /*------------------------------------------------------------------*/
 /*						C++ guard macro								*/
 /*------------------------------------------------------------------*/
-#ifdef __cplusplus
-extern "C"
-{
+#ifdef	__cplusplus
+	extern "C"	{
 #endif
 /*------------------------------------------------------------------*/
 /*						head files include 							*/
 /*------------------------------------------------------------------*/
 #include "LC_Common.h"
-#include "LC_UI_Led_Buzzer.h"
 /*------------------------------------------------------------------*/
 /*						Pins definitions							*/
 /*------------------------------------------------------------------*/
-#define		MY_KEY_NO1_GPIO		P23
-#define		MY_KEY_NO2_GPIO		P26
+#define		LC_IIC_GPIO_SDA			P14
+#define		LC_IIC_GPIO_SCL			P11
+/*------------------------------------------------------------------*/
+/*						MACROS										*/
+/*------------------------------------------------------------------*/
 
 /*------------------------------------------------------------------*/
 /*						UI Task Events definitions					*/
 /*------------------------------------------------------------------*/
-#define		KEY_EVENT_LEVEL1	0x0001
-#define		KEY_EVENT_SCANF		0x0004
-
-#define		KEY_SCANF_EVT		0x0008
-#define		KEY_STOPSCANF_EVT	0x0010
-#define		KEY_CHARG_CHECK_EVT	0x0020
 
 /*------------------------------------------------------------------*/
 /*						Data structures								*/
 /*------------------------------------------------------------------*/
-typedef struct
-{
-	uint32 key_down_sys_tick; //	system time when key down
-	uint8 key_down_flag;      //	1:key down	0:key release
-	uint8 key_repeated_num;   //	times of key down
-} lc_key_struct_data;
 
 /*------------------------------------------------------------------*/
 /*						external variables							*/
 /*------------------------------------------------------------------*/
-extern uint8 LC_Key_TaskID;
-extern lc_key_struct_data LC_Key_Param;
+
 /*------------------------------------------------------------------*/
 /*						User function prototypes					*/
 /*------------------------------------------------------------------*/
-void	LC_Key_Gpio_Init(void);
-void	LC_Key_Task_Init(uint8 task_id);
-uint16	LC_Key_ProcessEvent(uint8 task_id, uint16 events);
-
-#ifdef __cplusplus
-}
+extern	void	LC_Gpio_IIC_Init				(void										);
+extern	void	LC_EEPROM_Read_Byte_Sequence	(uint8 id, uint8 addr, uint8 *p,uint8 len	);
+extern	void	LC_EEPROM_Write_Byte_Sequence	(uint8 id, uint8 addr, uint8 *p, uint8 len	);
+extern	void	LC_EEPROM_Write_One_Byte		(uint8 id, uint8 addr, uint8 data			);
+extern	uint8	LC_EEPROM_Read_One_Byte			(uint8 id, uint8 addr						);
+#ifdef	__cplusplus
+	}
 #endif
 
-#endif /* LC_KEY_H_ */
-/** @}*/
+#endif	/**	LC_IIC.h **/
+/**	@}*/
+

@@ -12,6 +12,7 @@
  
 #include "LC_UI_Led_Buzzer.h"
 #include "LC_Event_Handler.h"
+#include "LC_IICDev.h"
 
 /*------------------------------------------------------------------*/
 /* 					 	public variables		 					*/
@@ -190,7 +191,7 @@ void LC_Switch_Poweron(uint8 cur_state, uint8 power_start_tick)
 		return;
 	}
 	uint8	poweron_start_num	=	power_start_tick;
-	static	uint32	poweron_start_time_100ms;
+
 	if(!cur_state)
 	{
 		while(poweron_start_num)
@@ -215,14 +216,20 @@ void LC_Switch_Poweron(uint8 cur_state, uint8 power_start_tick)
 					poweron_start_num	=	0;
 					LOG("release first\n");
 				}
+				else
+				{
+					LC_Dev_System_Param.dev_power_flag	=	SYSTEM_STANDBY;
+					LC_Dev_Poweroff();
+					return;
+				}
 			}
 		}
-		WaitMs(10);
+		WaitMs(5);
 		if(hal_gpio_read(MY_KEY_NO1_GPIO) != 0)
 		{
 			if(poweron_start_num != power_start_tick)
 			{
-				poweron_start_num	=	20;
+				poweron_start_num	=	30;
 				while(poweron_start_num)
 				{
 					WaitMs(10);
@@ -254,7 +261,9 @@ void LC_Switch_Poweron(uint8 cur_state, uint8 power_start_tick)
 void LC_Dev_Poweroff(void)
 {
 	LOG("POWER OFF[%d]\n", LC_Dev_System_Param.dev_power_flag);
-
+	LC_SensorSuspend();
+	hal_gpio_pin_init(MY_KEY_NO2_GPIO, IE);
+	hal_gpio_pull_set(MY_KEY_NO2_GPIO, STRONG_PULL_UP);
 	hal_gpio_pin_init(GPIO_OUT_DCDC_EN, IE);
 	hal_gpio_pull_set(GPIO_OUT_DCDC_EN, GPIO_PULL_UP_S);
 
@@ -266,7 +275,7 @@ void LC_Dev_Poweroff(void)
 	pwroff_cfg_t	User_Set_Wakeup[2];
 	User_Set_Wakeup[0].pin	=	MY_KEY_NO1_GPIO;
 	User_Set_Wakeup[0].type	=	NEGEDGE;
-	User_Set_Wakeup[0].on_time	=	5;
+	User_Set_Wakeup[0].on_time	=	0;
 
 	User_Set_Wakeup[1].pin	=	GPIO_USB_CHECK;
 	User_Set_Wakeup[1].type	=	POSEDGE;

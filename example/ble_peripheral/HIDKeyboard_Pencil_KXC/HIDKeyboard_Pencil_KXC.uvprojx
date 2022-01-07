@@ -606,6 +606,16 @@
               <FileType>1</FileType>
               <FilePath>.\Source\User\LC_UI_led_buzzer.c</FilePath>
             </File>
+            <File>
+              <FileName>LC_IIC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Source\User\LC_IIC.c</FilePath>
+            </File>
+            <File>
+              <FileName>LC_IICDev.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Source\User\LC_IICDev.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
