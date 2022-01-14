@@ -151,7 +151,7 @@ static const uint8 devInfoSerialNumber[] 	= 	"GQXY2DLKJKM9";
 #if FIRMWARE_REVISION_ENABLE
 // Firmware Revision String characteristic
 static uint8 devInfoFirmwareRevProps 		= 	GATT_PROP_READ;
-static const uint8 devInfoFirmwareRev[] 	= 	"SDK3.1.1.0_v1.4.2";
+static const uint8 devInfoFirmwareRev[] 	= 	"SDK3.1.1.0_v1.4.3";
 #endif
 
 #if	HARDWARE_REVISION_ENABLE
@@ -169,7 +169,7 @@ static const uint8 devInfoSoftwareRev[] 	= 	"Software Revision";
 #if	MANUFACTURE_NAME_STR_ENABLE
 // Manufacturer Name String characteristic
 static uint8 devInfoMfrNameProps 			= 	GATT_PROP_READ;
-static const uint8 devInfoMfrName[] 		= 	"Apple inc.";
+static const uint8 devInfoMfrName[] 		= 	"manfuacturer";
 #endif
 
 #if	IEEE_DATA_ENABLE

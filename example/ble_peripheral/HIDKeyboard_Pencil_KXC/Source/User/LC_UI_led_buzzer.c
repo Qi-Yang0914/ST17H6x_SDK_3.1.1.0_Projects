@@ -197,13 +197,13 @@ void LC_Switch_Poweron(uint8 cur_state, uint8 power_start_tick)
 		while(poweron_start_num)
 		{
 			WaitMs(10);
-			if(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)
+			if(hal_gpio_read(MY_KEY_NO1_GPIO) == 1)
 			{
 				poweron_start_num--;
-				LOG("press first %d\n", poweron_start_num);
+				LOG("release first %d\n", poweron_start_num);
 				if(poweron_start_num == 0)
 				{
-					LOG("long once press\n");
+					LOG("no press\n");
 					LC_Dev_System_Param.dev_power_flag	=	SYSTEM_STANDBY;
 					LC_Dev_Poweroff();
 					return;
@@ -214,42 +214,45 @@ void LC_Switch_Poweron(uint8 cur_state, uint8 power_start_tick)
 				if(poweron_start_num!=power_start_tick)
 				{	
 					poweron_start_num	=	0;
-					LOG("release first\n");
+					LOG("press first\n");
+					LC_Dev_System_Param.dev_power_flag		=	SYSTEM_WORKING;
+					return;
 				}
 				else
 				{
+					LOG("press error\n");
 					LC_Dev_System_Param.dev_power_flag	=	SYSTEM_STANDBY;
 					LC_Dev_Poweroff();
 					return;
 				}
 			}
 		}
-		WaitMs(5);
-		if(hal_gpio_read(MY_KEY_NO1_GPIO) != 0)
-		{
-			if(poweron_start_num != power_start_tick)
-			{
-				poweron_start_num	=	30;
-				while(poweron_start_num)
-				{
-					WaitMs(10);
-					poweron_start_num--;
-					LOG("check second press %d\n", poweron_start_num);
-					if(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)
-					{
-						LOG("press second %d\n",poweron_start_num);
-						poweron_start_num	=	0;
-						// WaitMs(10);
-						// while(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)	;
-						LC_Dev_System_Param.dev_power_flag		=	SYSTEM_WORKING;
-						return;
-					}
-				}
-			}
-			poweron_start_num	=	power_start_tick;
-			LC_Dev_System_Param.dev_power_flag		=	SYSTEM_STANDBY;
-			LC_Dev_Poweroff();
-		}
+		// WaitMs(5);
+		// if(hal_gpio_read(MY_KEY_NO1_GPIO) != 0)
+		// {
+		// 	if(poweron_start_num != power_start_tick)
+		// 	{
+		// 		poweron_start_num	=	30;
+		// 		while(poweron_start_num)
+		// 		{
+		// 			WaitMs(10);
+		// 			poweron_start_num--;
+		// 			LOG("check second press %d\n", poweron_start_num);
+		// 			if(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)
+		// 			{
+		// 				LOG("press second %d\n",poweron_start_num);
+		// 				poweron_start_num	=	0;
+		// 				// WaitMs(10);
+		// 				// while(hal_gpio_read(MY_KEY_NO1_GPIO) == 0)	;
+		// 				LC_Dev_System_Param.dev_power_flag		=	SYSTEM_WORKING;
+		// 				return;
+		// 			}
+		// 		}
+		// 	}
+		// 	poweron_start_num	=	power_start_tick;
+		// 	LC_Dev_System_Param.dev_power_flag		=	SYSTEM_STANDBY;
+		// 	LC_Dev_Poweroff();
+		// }
 	}
 }
 /*!
@@ -275,7 +278,7 @@ void LC_Dev_Poweroff(void)
 	pwroff_cfg_t	User_Set_Wakeup[2];
 	User_Set_Wakeup[0].pin	=	MY_KEY_NO1_GPIO;
 	User_Set_Wakeup[0].type	=	NEGEDGE;
-	User_Set_Wakeup[0].on_time	=	0;
+	User_Set_Wakeup[0].on_time	=	10;
 
 	User_Set_Wakeup[1].pin	=	GPIO_USB_CHECK;
 	User_Set_Wakeup[1].type	=	POSEDGE;

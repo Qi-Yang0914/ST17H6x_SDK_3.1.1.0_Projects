@@ -37,7 +37,7 @@ LR_ROM_XIP  0x11020000 0x020000 {
    ;libethermind_mesh_core.o(+RO) 
    ;appl_*.o(+RO)
    ;;;;;
-   ;devinfoservice.o(+RO)
+   devinfoservice.o(+RO)
    ota_app_service.o(+RO)
    gatt*.o(+RO)
    gattservapp.o(+RO)
