@@ -217,11 +217,11 @@ uint16 LC_Key_ProcessEvent(uint8 task_id, uint16 events)
 					{
 						if(LC_Dev_System_Param.dev_ble_con_state == LC_DEV_BLE_CONNECTION)
 						{
-							LOG("keyboard E\n");
+							LOG("CTRL/CMD+Z\n");
 							LL_PLUS_DisableSlaveLatency(0);
 							osal_stop_timerEx(hidKbdTaskId, HID_LATENCY_TURNOFF_EVT);
-							hidKbdSendReport(0, HID_KEYBOARD_E);
-							hidKbdSendReport(0, HID_KEYBOARD_RESERVED);
+							hidKbdSendReport(1, HID_KEYBOARD_Z);
+							hidKbdSendReport(1, HID_KEYBOARD_RESERVED);
 							osal_start_timerEx(hidKbdTaskId, HID_LATENCY_TURNOFF_EVT, 500);
 						}
 					}
