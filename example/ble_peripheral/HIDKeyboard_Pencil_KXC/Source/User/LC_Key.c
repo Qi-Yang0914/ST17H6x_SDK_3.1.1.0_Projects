@@ -201,7 +201,7 @@ uint16 LC_Key_ProcessEvent(uint8 task_id, uint16 events)
                 LC_last_button_pressed = 0;
             }
         }
-        if (LC_Key_Param.key_repeated_num && LC_Key_Param.key_down_sys_tick && clock_time_exceed_func(LC_Key_Param.key_down_sys_tick, 300))
+        if (LC_Key_Param.key_repeated_num && LC_Key_Param.key_down_sys_tick && clock_time_exceed_func(LC_Key_Param.key_down_sys_tick, 250))
         {
             LOG("Key total Kick num: %d\n", LC_Key_Param.key_repeated_num);
 
@@ -218,11 +218,11 @@ uint16 LC_Key_ProcessEvent(uint8 task_id, uint16 events)
 						if(LC_Dev_System_Param.dev_ble_con_state == LC_DEV_BLE_CONNECTION)
 						{
 							LOG("CTRL/CMD+Z\n");
-							LL_PLUS_DisableSlaveLatency(0);
+							// LL_PLUS_DisableSlaveLatency(0);
 							osal_stop_timerEx(hidKbdTaskId, HID_LATENCY_TURNOFF_EVT);
 							hidKbdSendReport(1, HID_KEYBOARD_Z);
 							hidKbdSendReport(1, HID_KEYBOARD_RESERVED);
-							osal_start_timerEx(hidKbdTaskId, HID_LATENCY_TURNOFF_EVT, 500);
+							// osal_start_timerEx(hidKbdTaskId, HID_LATENCY_TURNOFF_EVT, 500);
 						}
 					}
 				}
@@ -249,7 +249,7 @@ uint16 LC_Key_ProcessEvent(uint8 task_id, uint16 events)
 
     if (events & KEY_SCANF_EVT)
     {
-        osal_start_timerEx(LC_Key_TaskID, KEY_SCANF_EVT, 40);
+        osal_start_timerEx(LC_Key_TaskID, KEY_SCANF_EVT, 30);
         LC_KeyScanf();
         return (events ^ KEY_SCANF_EVT);
     }

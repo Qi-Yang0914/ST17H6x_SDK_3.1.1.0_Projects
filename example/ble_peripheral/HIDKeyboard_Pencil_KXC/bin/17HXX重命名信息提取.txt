@@ -1,10 +1,10 @@
 目标文件名：HIDKeyboard_Pencil_KXC.hexf
 公司：KXC
 项目：Pencil
-IC型号：ST17H65_3110_v1.4.5
+IC型号：ST17H65_3110_v1.4.6
 设备名：Pencil
 CRC24：XXXXXX （这个是步骤二中计算得出的）
-时间：220317
+时间：220331
 备注：
 
 

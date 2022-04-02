@@ -151,7 +151,7 @@ static const uint8 devInfoSerialNumber[] 	= 	"GQXY2DLKJKM9";
 #if FIRMWARE_REVISION_ENABLE
 // Firmware Revision String characteristic
 static uint8 devInfoFirmwareRevProps 		= 	GATT_PROP_READ;
-static const uint8 devInfoFirmwareRev[] 	= 	"SDK3.1.1.0_v1.4.5";
+static const uint8 devInfoFirmwareRev[] 	= 	"SDK3.1.1.0_v1.4.6";
 #endif
 
 #if	HARDWARE_REVISION_ENABLE
@@ -190,7 +190,7 @@ static uint8 devInfoPnpIdProps 			= 	GATT_PROP_READ;
 static uint8 devInfoPnpId[DEVINFO_PNP_ID_LEN] =
 {
 	1,                                      // Vendor ID source (1=Bluetooth SIG)
-	LO_UINT16(0x004c), HI_UINT16(0x004c),   // Vendor ID  
+	LO_UINT16(0x00ff), HI_UINT16(0x00ff),   // Vendor ID  
 	LO_UINT16(0x0000), HI_UINT16(0x0000),   // Product ID (vendor-specific)
 	LO_UINT16(0x0100), HI_UINT16(0x0100)    // Product version (JJ.M.N)
 };
